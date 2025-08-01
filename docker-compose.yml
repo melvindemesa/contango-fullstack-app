@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: contango-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: contango_user
+      POSTGRES_PASSWORD: contango_password
+      POSTGRES_DB: contangodb
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  backend:
+    container_name: contango-backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      DATABASE_URL: postgres://contango_user:contango_password@db:5432/contangodb
+    depends_on:
+      - db
+
+  frontend:
+    container_name: contango-frontend
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api
+
+volumes:
+  pgdata:
